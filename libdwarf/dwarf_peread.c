@@ -203,7 +203,7 @@ pe_get_section_info (void *obj,
         sp = pep->pe_sectionptr + section_index;
         return_section->addr = 0;
         return_section->type = 0;
-        return_section->size = sp->SizeOfRawData;
+        return_section->size = sp->VirtualSize;
         return_section->name = sp->dwarfsectname;
         return_section->link = 0;
         return_section->info = 0;
@@ -300,30 +300,40 @@ pe_load_section (void *obj, Dwarf_Half section_index,
 
         struct dwarf_pe_generic_image_section_header *sp =
             pep->pe_sectionptr + section_index;
+        Dwarf_Unsigned read_length = sp->SizeOfRawData;
         if(sp->loaded_data) {
             *return_data = sp->loaded_data;
             return DW_DLV_OK;
         }
-        if (!sp->SizeOfRawData) {
+        if (!sp->VirtualSize) {
             return DW_DLV_NO_ENTRY;
         }
-        if ((sp->SizeOfRawData + sp->PointerToRawData) >
+        if(sp->VirtualSize < read_length) {
+            /* don't read padding that wasn't allocated in memory */
+            read_length = sp->VirtualSize;
+        }
+        if ((read_length + sp->PointerToRawData) >
             pep->pe_filesize) {
             *error = DW_DLE_FILE_TOO_SMALL;
             return DW_DLV_ERROR;
         }
-        sp->loaded_data = malloc(sp->SizeOfRawData);
+        sp->loaded_data = malloc(sp->VirtualSize);
         if(!sp->loaded_data) {
             *error = DW_DLE_ALLOC_FAIL;
             return DW_DLV_ERROR;
         }
+
         res = _dwarf_object_read_random(pep->pe_fd,
             (char *)sp->loaded_data,
-            sp->PointerToRawData, sp->SizeOfRawData, error);
+            sp->PointerToRawData, read_length, error);
         if (res != DW_DLV_OK) {
             free(sp->loaded_data);
             sp->loaded_data = 0;
             return res;
+        }
+        if(sp->VirtualSize > read_length) {
+            /* zero space that was allocated but truncated from the file */
+            memset(sp->loaded_data + read_length, 0, (sp->VirtualSize - read_length));
         }
         *return_data = sp->loaded_data;
         return DW_DLV_OK;
