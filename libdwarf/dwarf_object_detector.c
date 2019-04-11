@@ -36,6 +36,10 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fcntl.h> /* O_RDONLY */
 #ifdef HAVE_UNISTD_H
 #include <unistd.h> /* lseek read close */
+#elif defined(_MSC_VER)
+#include <io.h> /* open close read write */
+#include <basetsd.h>
+typedef SSIZE_T ssize_t; /* MSVC does not have POSIX ssize_t */
 #endif /* HAVE_UNISTD_H */
 #ifdef HAVE_STRING_H
 #include <string.h> /* memcpy, strcpy */

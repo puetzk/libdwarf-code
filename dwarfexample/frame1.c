@@ -48,6 +48,8 @@
 #include <stdlib.h>     /* For exit() */
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>     /* For close() */
+#elif defined(_MSC_VER)
+#include <io.h>
 #endif
 #include <string.h>     /* For strcmp* */
 #include <stdio.h>

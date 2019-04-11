@@ -48,6 +48,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <time.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h> /* lseek read close */
+#elif defined(_MSC_VER)
+#include <io.h> /* open close */
 #endif /* HAVE_UNISTD_H */
 #include "libdwarf.h"
 #include "libdwarfdefs.h"
